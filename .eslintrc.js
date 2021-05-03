@@ -26,5 +26,12 @@ module.exports = {
     "import/prefer-default-export": "off",
     "prefer-destructuring": "off",
     "prefer-template": "off",
+    "no-underscore-dangle": "off",
+    "no-plusplus": "off",
+    "no-await-in-loop": "off",
+    "@typescript-eslint/no-explicit-any": "off",
+    "no-param-reassign": "off",
+    "func-names": "off",
+    "consistent-return": "off"
   },
 };

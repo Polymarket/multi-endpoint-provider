@@ -15,7 +15,13 @@
       "url": "https://github.com/samhatem"
     }
   ],
-  "dependencies": {},
+  "dependencies": {
+    "@ethersproject/logger": "^5.1.0",
+    "@ethersproject/networks": "^5.1.0",
+    "@ethersproject/properties": "^5.1.0",
+    "@ethersproject/providers": "^5.1.2",
+    "@ethersproject/web": "^5.1.0"
+  },
   "peerDependencies": {},
   "devDependencies": {
     "@types/jest": "^26.0.23",
