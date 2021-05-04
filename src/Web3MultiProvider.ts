@@ -4,8 +4,9 @@
  */
 import { defineReadOnly } from "@ethersproject/properties";
 import { Logger } from "@ethersproject/logger";
+import { Networkish } from "@ethersproject/networks";
 
-import JsonRpcMultiProvider, { assertResult } from "./JsonRpcMultiProvider";
+import { JsonRpcMultiProvider, getError } from "./JsonRpcMultiProvider";
 
 const logger = new Logger("providers/5.1.2");
 
@@ -80,13 +81,56 @@ function buildEip1193Fetcher(provider: ExternalProvider): JsonRpcFetchFunc {
     };
 }
 
+function getProviderComponents(
+    provider: ExternalProvider | JsonRpcFetchFunc,
+): { path: string; jsonRpcFetchFunc: JsonRpcFetchFunc; subprovider: ExternalProvider | null } {
+    let path: string = null;
+    let jsonRpcFetchFunc: JsonRpcFetchFunc = null;
+    let subprovider: ExternalProvider = null;
+
+    if (typeof provider === "function") {
+        path = "unknown:";
+        jsonRpcFetchFunc = provider;
+    } else {
+        path = provider.host || provider.path || "";
+        if (!path && provider.isMetaMask) {
+            path = "metamask";
+        }
+
+        subprovider = provider;
+
+        if (provider.request) {
+            if (path === "") {
+                path = "eip-1193:";
+            }
+            jsonRpcFetchFunc = buildEip1193Fetcher(provider);
+        } else if (provider.sendAsync) {
+            jsonRpcFetchFunc = buildWeb3LegacyFetcher(provider, provider.sendAsync.bind(provider));
+        } else if (provider.send) {
+            jsonRpcFetchFunc = buildWeb3LegacyFetcher(provider, provider.send.bind(provider));
+        } else {
+            logger.throwArgumentError("unsupported provider", "provider", provider);
+        }
+
+        if (!path) {
+            path = "unknown:";
+        }
+    }
+
+    return {
+        path,
+        jsonRpcFetchFunc,
+        subprovider,
+    };
+}
+
 export class Web3MultiProvider extends JsonRpcMultiProvider {
     readonly providers: ExternalProvider[];
 
     readonly jsonRpcFetchFuncs: JsonRpcFetchFunc[];
 
     constructor(providers: (ExternalProvider | JsonRpcFetchFunc)[], network?: Networkish) {
-        logger.checkNew(new.target, Web3Provider);
+        logger.checkNew(new.target, Web3MultiProvider);
 
         if (providers == null) {
             logger.throwArgumentError("missing provider", "provider", providers);
@@ -99,7 +143,7 @@ export class Web3MultiProvider extends JsonRpcMultiProvider {
         for (let i = 0; i < providers.length; i++) {
             const provider = providers[i];
 
-            const { path, jsonRpcFetchFunc, subprovider } = this._getProviderComponents(provider);
+            const { path, jsonRpcFetchFunc, subprovider } = getProviderComponents(provider);
 
             paths.push(path);
             jsonRpcFetchFuncs.push(jsonRpcFetchFunc);
@@ -112,68 +156,29 @@ export class Web3MultiProvider extends JsonRpcMultiProvider {
         defineReadOnly(this, "providers", subproviders);
     }
 
-    static _getProviderComponents(
-        provider: ExternalProvider | JsonRpcFetchFunc,
-    ): { path: string; jsonRpcFetchFunc: JsonRpcFetchFunc; subprovider: ExternalProvider | null } {
-        let path: string = null;
-        let jsonRpcFetchFunc: JsonRpcFetchFunc = null;
-        let subprovider: ExternalProvider = null;
-
-        if (typeof provider === "function") {
-            path = "unknown:";
-            jsonRpcFetchFunc = provider;
-        } else {
-            path = provider.host || provider.path || "";
-            if (!path && provider.isMetaMask) {
-                path = "metamask";
-            }
-
-            subprovider = provider;
-
-            if (provider.request) {
-                if (path === "") {
-                    path = "eip-1193:";
-                }
-                jsonRpcFetchFunc = buildEip1193Fetcher(provider);
-            } else if (provider.sendAsync) {
-                jsonRpcFetchFunc = buildWeb3LegacyFetcher(provider, provider.sendAsync.bind(provider));
-            } else if (provider.send) {
-                jsonRpcFetchFunc = buildWeb3LegacyFetcher(provider, provider.send.bind(provider));
-            } else {
-                logger.throwArgumentError("unsupported provider", "provider", provider);
-            }
-
-            if (!path) {
-                path = "unknown:";
-            }
-        }
-
-        return {
-            path,
-            jsonRpcFetchFunc,
-            subprovider,
-        };
+    send(method: string, params: Array<any>): Promise<any> {
+        return this._performRequests(method, params);
     }
 
-    send(method: string, params: Array<any>): Promise<any> {
+    private async _performRequests(method: string, params: Array<any>): Promise<any> {
         let result;
-        let errors;
+        const errors: string[] = [];
+
         for (let i = 0; i < this.jsonRpcFetchFuncs.length; i++) {
             const fetch = this.jsonRpcFetchFuncs[i];
 
             try {
                 result = await fetch(method, params);
 
-                break;
-            } catch (e) {
+                return result;
+            } catch (error) {
                 const errMessage = (error.message || error).toString();
 
                 errors.push(errMessage);
             }
         }
 
-        assertResult(result, errors);
-
-        return result;
+        const error = getError(errors);
+        throw error;
     }
 }

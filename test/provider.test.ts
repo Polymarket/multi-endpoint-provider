@@ -5,7 +5,7 @@ import { Wallet } from "@ethersproject/wallet";
 import { ethers } from "ethers";
 
 import { Web3MultiProvider, JsonRpcMultiProvider } from "../src";
-import { getMockExternalProvider } from "./helpers";
+import { getMockFetchFunction } from "./helpers";
 
 const bnify = BigNumber.from;
 
@@ -514,14 +514,14 @@ const providerFunctions: Array<ProviderDescription> = [
             return new JsonRpcMultiProvider(getEndpoints(network));
         },
     },
-    //    {
-    //        name: "Web3MultiProvider",
-    //        networks: allNetworks,
-    //        create: (network: string) => {
-    //            const externalProviders = getEndpoints(network).map(endpoint => getMockExternalProvider(endpoint));
-    //            return new Web3MultiProvider(externalProviders);
-    //        },
-    //    },
+    {
+        name: "Web3MultiProvider",
+        networks: allNetworks,
+        create: (network: string) => {
+            const fetchFunctions = getEndpoints(network).map(endpoint => getMockFetchFunction(endpoint));
+            return new Web3MultiProvider(fetchFunctions);
+        },
+    },
 ];
 
 // This wallet can be funded and used for various test cases
