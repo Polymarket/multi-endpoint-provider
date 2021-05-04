@@ -5,13 +5,10 @@ import { deepCopy, defineReadOnly } from "@ethersproject/properties";
 
 import { MultiError } from "./MultiError";
 
-export function assertResult(result: any, errors: string[]): void { // eslint-disable-line
-    if (!result) {
-        const error = new MultiError(`Rpc requests unsuccessful.\n${errors.map(err => ` ${err}`).join("\n")}`);
-        error.errors = errors;
-        throw error;
-    }
-}
+export const getError = (errors: string[]): MultiError =>
+    new MultiError(`Rpc requests unsuccessful.\n${errors.map(err => ` ${err}`).join("\n")}`, errors);
+
+// new MultiError(`Rpc requests unsuccessful.\n${errors.map(err => ` ${err}`).join("\n")}`, errors);
 
 function getResult(payload: { error?: { code?: number; data?: any; message?: string }; result?: any }): any {
     if (payload.error) {
@@ -25,7 +22,7 @@ function getResult(payload: { error?: { code?: number; data?: any; message?: str
     return payload.result;
 }
 
-class JsonRpcMultiProvider extends JsonRpcProvider {
+export class JsonRpcMultiProvider extends JsonRpcProvider {
     readonly rpcUrls: string[];
 
     constructor(rpcUrls: string[], network?: Networkish) {
@@ -48,14 +45,21 @@ class JsonRpcMultiProvider extends JsonRpcProvider {
             provider: this,
         });
 
+        return this._send(request);
+    }
+
+    private async _send(request: { method: string; params: Array<any>; id: number; jsonrpc: string }): Promise<any> {
+        const { method } = request;
+
         const cache = ["eth_chainId", "eth_blockNumber"].indexOf(method) >= 0;
         if (cache && this._cache[method]) {
             return this._cache[method];
         }
 
-        let errors: string[];
+        const errors: string[] = [];
         let result;
-        for (i = 0; i < this.rpcUrls.length; i++) {
+
+        for (let i = 0; i < this.rpcUrls.length; i++) {
             try {
                 result = await fetchJson(this.rpcUrls[0], JSON.stringify(request), getResult);
 
@@ -66,7 +70,16 @@ class JsonRpcMultiProvider extends JsonRpcProvider {
                     provider: this,
                 });
 
-                break;
+                // Cache the fetch, but clear it on the next event loop
+                if (cache) {
+                    this._cache[method] = result;
+                    setTimeout(() => {
+                        // @ts-ignore the inherited class expects this behavior
+                        this._cache[method] = null;
+                    }, 0);
+                }
+
+                return result;
             } catch (error) {
                 this.emit("debug", {
                     action: "response",
@@ -81,18 +94,7 @@ class JsonRpcMultiProvider extends JsonRpcProvider {
             }
         }
 
-        assertResult(result, errors);
-
-        // Cache the fetch, but clear it on the next event loop
-        if (cache) {
-            this._cache[method] = result;
-            setTimeout(() => {
-                this._cache[method] = null;
-            }, 0);
-        }
-
-        return result;
+        const error = getError(errors);
+        throw error;
     }
 }
-
-export default JsonRpcMultiProvider;

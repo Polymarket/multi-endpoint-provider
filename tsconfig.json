@@ -16,7 +16,7 @@
     "isolatedModules": true,
     "noImplicitAny": true,
     "skipLibCheck": true,
-    "strict": true,
+    "strict": false,
     "resolveJsonModule": true
   },
   "include": ["src", "test", "jest.config.js"],

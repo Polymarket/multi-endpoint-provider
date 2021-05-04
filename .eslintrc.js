@@ -32,6 +32,7 @@ module.exports = {
     "@typescript-eslint/no-explicit-any": "off",
     "no-param-reassign": "off",
     "func-names": "off",
-    "consistent-return": "off"
+    "consistent-return": "off",
+    "@typescript-eslint/ban-ts-comment": "off",
   },
 };
