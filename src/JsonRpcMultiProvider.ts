@@ -61,7 +61,7 @@ export class JsonRpcMultiProvider extends JsonRpcProvider {
 
         for (let i = 0; i < this.rpcUrls.length; i++) {
             try {
-                result = await fetchJson(this.rpcUrls[0], JSON.stringify(request), getResult);
+                result = await fetchJson(this.rpcUrls[i], JSON.stringify(request), getResult);
 
                 this.emit("debug", {
                     action: "response",
