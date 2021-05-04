@@ -500,7 +500,7 @@ type TestDescription = {
 
 const allNetworks = ["mainnet", "kovan", "goerli", "ropsten"];
 
-const infuraKeys = ["0c1adc7b335e4f72aceefd255f339bcc", "f32f45f87fff4522a5d302db74593dc3"];
+const infuraKeys = ["faulty-key", "0c1adc7b335e4f72aceefd255f339bcc", "f32f45f87fff4522a5d302db74593dc3"];
 
 const getRpcEndpoint = (network: string, apiKey: string) => `https://${network}.infura.io/v3/${apiKey}`;
 
