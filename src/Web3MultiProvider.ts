@@ -145,10 +145,10 @@ export class Web3MultiProvider extends JsonRpcMultiProvider {
     }
 
     send(method: string, params: Array<any>): Promise<any> {
-        return this._performRequests(method, params);
+        return this._send(method, params);
     }
 
-    private async _performRequests(method: string, params: Array<any>): Promise<any> {
+    async _send(method: string, params: Array<any>): Promise<any> {
         let result;
         const errors: string[] = [];
 

@@ -32,6 +32,10 @@ export class JsonRpcMultiProvider extends JsonRpcProvider {
     }
 
     send(method: string, params: Array<any>): Promise<any> {
+        return this._send(method, params);
+    }
+
+    async _send(method: string, params: Array<any>): Promise<any> {
         const request = {
             method,
             params,
@@ -44,12 +48,6 @@ export class JsonRpcMultiProvider extends JsonRpcProvider {
             request: deepCopy(request),
             provider: this,
         });
-
-        return this._send(request);
-    }
-
-    private async _send(request: { method: string; params: Array<any>; id: number; jsonrpc: string }): Promise<any> {
-        const { method } = request;
 
         const cache = ["eth_chainId", "eth_blockNumber"].indexOf(method) >= 0;
         if (cache && this._cache[method]) {
