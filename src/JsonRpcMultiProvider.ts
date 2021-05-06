@@ -8,8 +8,6 @@ import { MultiError } from "./MultiError";
 export const getError = (errors: string[]): MultiError =>
     new MultiError(`Rpc requests unsuccessful.\n${errors.map(err => ` ${err}`).join("\n")}`, errors);
 
-// new MultiError(`Rpc requests unsuccessful.\n${errors.map(err => ` ${err}`).join("\n")}`, errors);
-
 function getResult(payload: { error?: { code?: number; data?: any; message?: string }; result?: any }): any {
     if (payload.error) {
         // @TODO: not any
