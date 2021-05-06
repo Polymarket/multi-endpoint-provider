@@ -1,9 +1,10 @@
 {
   "name": "@polymarket/multi-endpoint-provider",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "ethers.js Providers that try backup rpc endpoints when requests fail",
   "author": "Sam Hatem <sam.hatem17@gmail.com>",
   "main": "lib/index.js",
+  "module": "lib.esm/index.js",
   "types": "lib/index.d.ts",
   "engines": {
     "node": ">=8",
@@ -32,6 +33,7 @@
     "ethers": "^5.1.4",
     "jest": "^26.6.3",
     "lint-staged": "^10.5.3",
+    "npm-run-all": "^4.1.5",
     "prettier": "^2.2.1",
     "shx": "^0.3.3",
     "ts-jest": "^26.4.4",
@@ -43,11 +45,17 @@
   "license": "MIT",
   "scripts": {
     "prebuild": "yarn clean",
-    "build": "tsc --project tsconfig.production.json",
-    "clean": "shx rm -rf ./lib",
+    "build:cjs": "tsc --project tsconfig.production.json",
+    "build:esm": "tsc --project tsconfig.esm.json",
+    "build": "run-p build:*",
+    "clean:cjs": "shx rm -rf ./lib",
+    "clean:esm": "shx rm -rf ./lib.esm",
+    "clean": "run-p clean:*",
     "lint": "eslint --config ./.eslintrc.js --ignore-path ./.eslintignore src",
     "prepack": "yarn build",
     "test": "jest",
-    "start": "yarn build -w"
+    "start:cjs": "tsc --project tsconfig.production.json -w",
+    "start:esm": "tsc --project tsconfig.esm.json -w",
+    "start": "run-p start:*"
   }
 }
