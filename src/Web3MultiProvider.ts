@@ -4,10 +4,11 @@
  */
 import { defineReadOnly } from "@ethersproject/properties";
 import { Logger } from "@ethersproject/logger";
-import { Networkish } from "@ethersproject/networks";
 import { ExternalProvider } from "@ethersproject/providers";
 
-import { JsonRpcMultiProvider, getError } from "./JsonRpcMultiProvider";
+import { JsonRpcMultiProvider } from "./JsonRpcMultiProvider";
+import { getError } from "./utils";
+import { HandleErrorFunc, ProviderOptions } from "./types";
 
 const logger = new Logger("providers/5.1.2");
 
@@ -117,7 +118,9 @@ export class Web3MultiProvider extends JsonRpcMultiProvider {
 
     readonly jsonRpcFetchFuncs: JsonRpcFetchFunc[];
 
-    constructor(providers: (ExternalProvider | JsonRpcFetchFunc)[], network?: Networkish) {
+    readonly handleRequestError: HandleErrorFunc;
+
+    constructor(providers: (ExternalProvider | JsonRpcFetchFunc)[], options?: ProviderOptions) {
         logger.checkNew(new.target, Web3MultiProvider);
 
         if (providers == null) {
@@ -138,10 +141,11 @@ export class Web3MultiProvider extends JsonRpcMultiProvider {
             subproviders.push(subprovider);
         }
 
-        super(paths, network);
+        super(paths, options);
 
         defineReadOnly(this, "jsonRpcFetchFuncs", jsonRpcFetchFuncs);
         defineReadOnly(this, "providers", subproviders);
+        defineReadOnly(this, "handleRequestError", options?.handleRequestError);
     }
 
     send(method: string, params: Array<any>): Promise<any> {
@@ -160,6 +164,8 @@ export class Web3MultiProvider extends JsonRpcMultiProvider {
 
                 return result;
             } catch (error) {
+                if (this.handleRequestError) this.handleRequestError(error, i);
+
                 const errMessage = (error.message || error).toString();
 
                 errors.push(errMessage);
