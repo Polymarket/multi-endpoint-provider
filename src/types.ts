@@ -14,5 +14,5 @@ export type HandleErrorFunc = (e: Error, endpointIndex: number) => void;
 
 export type ProviderOptions = {
     network?: Networkish;
-    handleRequestError: HandleErrorFunc;
+    handleRequestError?: HandleErrorFunc;
 };
