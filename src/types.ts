@@ -10,7 +10,7 @@ export class MultiError extends Error {
     }
 }
 
-export type HandleErrorFunc = (e: Error, endpointIndex: number) => void;
+export type HandleErrorFunc = (e: any, endpointIndex: number) => void;
 
 export type ProviderOptions = {
     network?: Networkish;
