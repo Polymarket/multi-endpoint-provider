@@ -482,7 +482,7 @@ function waiter(duration: number): Promise<void> {
 type ProviderDescription = {
     name: string;
     networks: Array<string>;
-    create: (network: string) => Provider;
+    create: (network: string) => [Provider, jest.MockedFunction<(e: Error) => void>];
 };
 
 type CheckSkipFunc = (provider: string, network: string, test: TestDescription) => boolean;
@@ -511,15 +511,22 @@ const providerFunctions: Array<ProviderDescription> = [
         name: "JsonRpcMultiProvider",
         networks: allNetworks,
         create: (network: string) => {
-            return new JsonRpcMultiProvider(getEndpoints(network));
+            const handleErrorMock = jest.fn();
+
+            return [
+                new JsonRpcMultiProvider(getEndpoints(network), { handleRequestError: handleErrorMock }),
+                handleErrorMock,
+            ];
         },
     },
     {
         name: "Web3MultiProvider",
         networks: allNetworks,
         create: (network: string) => {
+            const handleErrorMock = jest.fn();
+
             const fetchFunctions = getEndpoints(network).map(endpoint => getMockFetchFunction(endpoint));
-            return new Web3MultiProvider(fetchFunctions);
+            return [new Web3MultiProvider(fetchFunctions, { handleRequestError: handleErrorMock }), handleErrorMock];
         },
     },
 ];
@@ -856,7 +863,7 @@ describe("Test Provider Methods", function () {
 
     providerFunctions.forEach(({ name, networks, create }) => {
         networks.forEach(network => {
-            const provider = create(network);
+            const [provider, mockHandleError] = create(network);
 
             testFunctions.forEach(test => {
                 // Skip tests not supported on this network
@@ -901,10 +908,20 @@ describe("Test Provider Methods", function () {
                                         throw new Error("timeout");
                                     }),
                                 ]);
+
+                                if (mockHandleError) {
+                                    expect(mockHandleError).toHaveBeenCalled();
+                                    mockHandleError.mock.calls = [];
+                                }
+
                                 return result;
                             } catch (attemptError) {
                                 console.log(`*** Failed attempt ${attempt + 1}: ${attemptError.message}`);
                                 error = attemptError;
+
+                                if (mockHandleError) {
+                                    mockHandleError.mock.calls = [];
+                                }
 
                                 // On failure, wait 5s
                                 await waiter(5000);

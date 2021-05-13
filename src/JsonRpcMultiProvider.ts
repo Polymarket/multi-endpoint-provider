@@ -1,12 +1,9 @@
 import { JsonRpcProvider } from "@ethersproject/providers";
-import { Networkish } from "@ethersproject/networks";
 import { fetchJson } from "@ethersproject/web";
 import { deepCopy, defineReadOnly } from "@ethersproject/properties";
 
-import { MultiError } from "./MultiError";
-
-export const getError = (errors: string[]): MultiError =>
-    new MultiError(`Rpc requests unsuccessful.\n${errors.map(err => ` ${err}`).join("\n")}`, errors);
+import { HandleErrorFunc, ProviderOptions } from "./types";
+import { getError } from "./utils";
 
 function getResult(payload: { error?: { code?: number; data?: any; message?: string }; result?: any }): any {
     if (payload.error) {
@@ -23,9 +20,12 @@ function getResult(payload: { error?: { code?: number; data?: any; message?: str
 export class JsonRpcMultiProvider extends JsonRpcProvider {
     readonly rpcUrls: string[];
 
-    constructor(rpcUrls: string[], network?: Networkish) {
-        super(rpcUrls[0], network);
+    readonly handleRequestError: HandleErrorFunc;
 
+    constructor(rpcUrls: string[], options?: ProviderOptions) {
+        super(rpcUrls[0], options?.network);
+
+        defineReadOnly(this, "handleRequestError", options?.handleRequestError);
         defineReadOnly(this, "rpcUrls", rpcUrls);
     }
 
@@ -83,6 +83,8 @@ export class JsonRpcMultiProvider extends JsonRpcProvider {
                     request,
                     provider: this,
                 });
+
+                if (this.handleRequestError) this.handleRequestError(error, i);
 
                 const errMessage = (error.message || error).toString();
 
