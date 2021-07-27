@@ -1,6 +1,6 @@
 {
   "name": "@polymarket/multi-endpoint-provider",
-  "version": "0.1.2",
+  "version": "0.1.4",
   "description": "ethers.js Providers that try backup rpc endpoints when requests fail",
   "author": "Sam Hatem <sam.hatem17@gmail.com>",
   "main": "lib/index.js",
@@ -16,14 +16,14 @@
       "url": "https://github.com/samhatem"
     }
   ],
-  "dependencies": {
-    "@ethersproject/logger": "^5.1.0",
-    "@ethersproject/networks": "^5.1.0",
-    "@ethersproject/properties": "^5.1.0",
-    "@ethersproject/providers": "^5.1.2",
-    "@ethersproject/web": "^5.1.0"
+  "dependencies": {},
+  "peerDependencies": {
+    "@ethersproject/logger": "^5.4.0",
+    "@ethersproject/networks": "^5.4.1",
+    "@ethersproject/properties": "^5.4.0",
+    "@ethersproject/providers": "^5.4.2",
+    "@ethersproject/web": "^5.4.0"
   },
-  "peerDependencies": {},
   "devDependencies": {
     "@ethersproject/bignumber": "^5.1.1",
     "@ethersproject/wallet": "^5.1.0",

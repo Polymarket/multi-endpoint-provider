@@ -1,6 +1,8 @@
 # @polymarket/multi-endpoint-provider
 
-ethers.js JsonRpcProvider and Web3Provider that try backup rpc endpoints when requests fail
+ethers.js JsonRpcProvider and Web3Provider that try backup rpc endpoints when requests fail.
+
+This package is expects ethers.js as a peer dependency so that different versions of ethers don't conflict.
 
 
 ```typescript
